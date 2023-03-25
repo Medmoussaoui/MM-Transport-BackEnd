@@ -1,16 +1,27 @@
 import { NextFunction, Request, Response } from "express";
+import jwt from 'jsonwebtoken';
+import { config } from "../startup/config";
 
 export function isAuthenticated(req: Request, res: Response, next: NextFunction) {
-    const user = (req.session as { [key: string]: any })["user"];
-    if (user) {
-        res.locals.user = user;
-        return next();
-    }
-    res.status(403).send('You have to bee auth');
+
+    let accessToken = req.header("access-token");
+    if (!accessToken) return res.status(403).send('invalid Access Token');
+
+    jwt.verify(accessToken, config.get("jwt-secretkey"), (err, json) => {
+
+        if (err == undefined) {
+            res.locals.user = json;
+            return next();
+        }
+
+        if (err.message == "jwt expired") return res.status(403).send("access token expired");
+
+        res.status(403).send("invalid Access Token");
+    });
 }
 
 export function isAuthorized(req: Request, res: Response, next: NextFunction) {
-    const admin = res.locals.user;
-    if (admin == true) return next();
-    res.status(403).send('you are not authorized to access this resource');
+    const { user } = res.locals;
+    if (user.isAdmin == true) return next();
+    res.status(403).send("You do not have permition to aceess this resource");
 } 
