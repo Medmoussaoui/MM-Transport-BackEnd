@@ -1,5 +1,4 @@
 import { Request, Response } from "express";
-import { setTableLastEdit } from "../../core/functions/update_table_last_edit";
 import { ServicessModule } from "../../module/service.model";
 
 export class DeleteServiceController {
@@ -24,7 +23,7 @@ export class DeleteServiceController {
     }
 
     async delete(): Promise<void> {
-        await ServicessModule.deleteMulti(this.req.body.services);
-        this.res.status(200).send("Delete Done");
+        const { services } = this.req.body;
+        await ServicessModule.delete(services);
     }
 }

@@ -1,5 +1,4 @@
 import { Request, Response } from "express";
-import { setTableLastEdit } from "../../core/functions/update_table_last_edit";
 import { ServicessModule } from "../../module/service.model";
 
 export class EditServiceController {
@@ -12,12 +11,12 @@ export class EditServiceController {
         this.res = res;
     }
 
-    invalidServiceId(): void {
-        this.res.status(400).send('Invalid Service Id');
+    canNotEditServicePayed(): void {
+        this.res.status(400).send("Can not edit Service payed");
     }
 
-    invalidBodyInput(): void {
-        this.res.status(400).send('bad Request');
+    invalidServiceId(): void {
+        this.res.status(400).send('Invalid Service Id');
     }
 
     checkBodyInput(): boolean {
@@ -26,21 +25,23 @@ export class EditServiceController {
         if (body.boatName == undefined) return false;
         if (body.serviceType == undefined) return false;
         if (body.price == undefined) return false;
-        if (body.date == undefined) return false;
+        if (body.dateCreate == undefined) return false;
         return true;
     }
 
-    async checkServiceId(): Promise<boolean> {
-        const service = await ServicessModule.getServiceById(this.req.body.serviceId);
-        if (service.length > 0) return true;
-        return false;
+    async getService(): Promise<any[]> {
+        const { serviceId } = this.req.body;
+        return await ServicessModule.getServiceById(serviceId);
+    }
+
+    isServicePayed(service: any): boolean {
+        const { pay_status } = service;
+        return pay_status == "pay";
     }
 
     async update() {
         const { body } = this.req;
         await ServicessModule.update(body);
-        await setTableLastEdit(body.tableId);
-        this.res.status(200).send("service Updated");
     }
 
 }

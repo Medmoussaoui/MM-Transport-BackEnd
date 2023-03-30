@@ -1,42 +1,59 @@
 import { Request, Response } from "express";
-import { AddServiceController } from "./add_service";
+import { AppResponce } from "../../core/constant/appResponce";
+import { AddServiceController } from "./add_service_controller";
 import { DeleteServiceController } from "./delete_service_controller";
 import { EditServiceController } from "./edit_service";
+import { GetServicesController } from "./get_services";
 
 export class ServicesController {
-    async add(req: Request, res: Response) {
+
+    async getServices(req: Request, res: Response) {
+        const controller = new GetServicesController(req, res);
+        const services = await controller.getServices();
+        res.send(services);
+    }
+
+    async addService(req: Request, res: Response) {
         const controller = new AddServiceController(req, res);
 
         if (!controller.verifyInput()) return controller.invalidServiceData();
 
         const validTruckId = await controller.checkTruckId();
-        const validtableId = await controller.checkTableId();
 
         if (!validTruckId) return controller.invalidTruckId();
-        if (!validtableId) return controller.invalidTableId();
 
         await controller.add();
+        res.status(201).send("Service Added");
     }
 
-    async edit(req: Request, res: Response) {
+    async editService(req: Request, res: Response) {
         const controller = new EditServiceController(req, res);
-       
-        if (!controller.checkBodyInput()) return controller.invalidBodyInput();
 
-        const validServiceId = await controller.checkServiceId();
-        if (!validServiceId) return controller.invalidServiceId();
+        if (!controller.checkBodyInput()) return AppResponce.badRequest(res);
+
+        const service = await controller.getService();
+        if (service.length <= 0) {
+            return controller.invalidServiceId();
+        }
+
+        const isPayed = controller.isServicePayed(service[0]);
+        if (isPayed) {
+            return controller.canNotEditServicePayed();
+        }
 
         await controller.update();
+        res.status(200).send("service Updated");
     }
 
 
-    async delete(req: Request, res: Response) {
+    async deleteService(req: Request, res: Response) {
         const controller = new DeleteServiceController(req, res);
-        if(!controller.checkBodyInput()) return controller.invalidBodyInput();
-        controller.delete();
+        
+        if (!controller.checkBodyInput()) {
+            return controller.invalidBodyInput();
+        }
+
+        await controller.delete();
+        res.status(200).send("Delete Done");
     }
-
-
-
-
 }

@@ -19,5 +19,5 @@ export function routes(app: Express) {
     app.use(isAuthorized);
     app.use('/tables', tablesRoute);
     app.use('/invoices', invoicesRoute);
-
+    
 }

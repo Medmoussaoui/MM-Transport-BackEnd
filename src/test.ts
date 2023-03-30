@@ -6,6 +6,10 @@ import { TablesModule } from "./module/tables.model";
 import { ServicessModule } from "./module/service.model";
 import { stringify } from "querystring";
 import { rmSync } from "fs";
+import { InvoiceModule } from "./module/invoice.model";
+import { InvoiceConverter } from "./core/class/invoice/invoice_converter";
+import { TableInvoice } from "./module/entity/invoice.entity";
+import { Service } from "./module/entity/services.entity";
 
 async function login() {
 
@@ -67,7 +71,7 @@ async function addService() {
     const body = {
         boatName: "test from service",
         serviceType: "node js",
-        price: "150",
+        price: 150,
         note: "hiii",
         driverId: "1",
         truckId: "1",
@@ -87,11 +91,11 @@ async function checkServiceId(): Promise<boolean> {
 
 async function updateService() {
     const body = {
-        "serviceId": "22",
-        "boatName": "test mabroka edit",
-        "serviceType": "test chbak esit",
-        "price": "150",
-        "date": "2023-03-25 14:27:20"
+        serviceId: "22",
+        boatName: "test mabroka edit",
+        serviceType: "test chbak esit",
+        price: 150,
+        dateCreate: "2023-03-25 14:27:20"
     };
 
     return await ServicessModule.update(body);
@@ -99,6 +103,70 @@ async function updateService() {
 
 async function setLastEdit() {
     return await TablesModule.updateLastEdit("1");
+}
+
+async function testUpdateTableService() {
+    const body = {
+        serviceId: "48",
+        tableId: "100",
+        boatName: "tirisit UPDATE",
+        serviceType: "dibardage",
+        price: 300,
+        dateCreate: "2023-03-26 15:57:18",
+        note: ""
+    };
+
+    const result = await TablesModule.updateService(body);
+    console.log(result);
+}
+
+async function addTableInvoiceServices() {
+    const result = await InvoiceModule.newTableInvoice("2");
+    console.log(result);
+}
+
+async function createInvoice() {
+    const result = await InvoiceModule.createInvoice("2");
+    console.log(result);
+}
+
+async function testInvoiceConverter() {
+    const invoiceData = await InvoiceModule.getInvoiceById("19");
+    const invoiceConverter = new InvoiceConverter(invoiceData);
+    const invoice = invoiceConverter.convert();
+    console.log(invoice);
+}
+
+
+function convertTableInvoiceRows(rows: any[]): TableInvoice[] {
+    let currentInvoiceId;
+    let invoiceConverter: InvoiceConverter;
+    const tableInvoices: TableInvoice[] = [];
+
+    for (let row of rows) {
+        if (currentInvoiceId != row.invoiceId) {
+            invoiceConverter = new InvoiceConverter([row]);
+            tableInvoices.push(invoiceConverter.invoice);
+            currentInvoiceId = invoiceConverter.invoice.invoiceId;
+        }
+        invoiceConverter!.invoiceData = [row];
+        invoiceConverter!.convert();
+    }
+
+    return tableInvoices;
+}
+
+
+async function testGetTableInvoices() {
+    const tableInvoiceRows = await InvoiceModule.tableInvoices("2");
+    console.log(tableInvoiceRows);
+    console.log("===================CONVERTED==================");
+    const tableInvoices = convertTableInvoiceRows(tableInvoiceRows);
+    console.log("-- First Invoice ");
+    console.log(tableInvoices[0]);
+    console.log("--------------------------------------------------");
+    console.log("-- Secound Invoice ");
+    console.log(tableInvoices[0]);
 }
 
 ////////////////////////// RUN TEST ///////////////////////////////
@@ -113,6 +181,11 @@ async function runTests() {
     // console.log(">> updateService() Result : " + updateResult);
     // const result = await setLastEdit();
     // sole.log(result);
+    // testUpdateTableService();
+    // addTableInvoiceServices();
+    // createInvoice();
+    // await testInvoiceConverter();
+    testGetTableInvoices();
 }
 
 runTests();

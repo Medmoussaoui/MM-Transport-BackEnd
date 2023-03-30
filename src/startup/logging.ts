@@ -9,6 +9,7 @@ export function loggingErrors() {
 
     process.on("unhandledRejection", (ex) => {
         /// [Implement Later] -- logger.error((ex as Error).message, ex);
+        console.log(ex);
         console.log("Catch unhadle Rejection");
     });
 }

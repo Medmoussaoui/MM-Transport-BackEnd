@@ -1,21 +1,21 @@
 import express from "express";
+import { InvoiceController } from "../controller/Invoice";
+
+
+
+//// .............../Invoice/
 
 export const invoicesRoute = express.Router();
+const controller = new InvoiceController();
 
-invoicesRoute.get('/', (req, res) => { });
-invoicesRoute.get('/:invoiceId', (req, res) => { });
-invoicesRoute.get('/table/:tableId', (req, res) => { });
 
-/// https://www.api.transport/invoice/new/table/454545445465448dsdsds
-/// https://www.api.transport/invoice/new/custom/
-
-invoicesRoute.post('/new/table/:tableId', (req, res) => { });
-invoicesRoute.post('/new/custom/', (req, res) => { });
-invoicesRoute.post('/save/:invoiceId', (req, res) => { });
-invoicesRoute.post('/payment/:invoiceId/:status', (req, res) => { });
-invoicesRoute.post('/service/new/:invoiceId', (req, res) => { });
-
-invoicesRoute.delete('/delete/:invoiceId', (req, res) => { });
-invoicesRoute.delete('/services/delete/:invoiceId/:serviceId', (req, res) => { });
-
-invoicesRoute.put('/rename/:newname/:invoiceId', (req, res) => { });
+invoicesRoute.get('/', controller.getAllInvoices);
+invoicesRoute.get('/:invoiceId', controller.getInvoiceById);
+invoicesRoute.get('/table/:tableId', controller.getTableInvoices);
+invoicesRoute.post('/generate/table', controller.generateTableInvoice);
+invoicesRoute.post('/generate/custom', controller.generateCustomInvoice);
+invoicesRoute.post('/services/new', controller.addNewService);
+invoicesRoute.delete('/services/delete', controller.deleteInvoiceServices)
+invoicesRoute.post('/payment', controller.payment)
+invoicesRoute.put('/save/:invoiceId',controller.saveInvoice)
+invoicesRoute.delete('/delete', controller.deleteInvoices);

@@ -14,7 +14,8 @@ export function isAuthenticated(req: Request, res: Response, next: NextFunction)
             return next();
         }
 
-        if (err.message == "jwt expired") return res.status(403).send("access token expired");
+        const jwtExpired = err.message == "jwt expired";
+        if (jwtExpired) return res.status(403).send("access token expired");
 
         res.status(403).send("invalid Access Token");
     });
@@ -22,6 +23,6 @@ export function isAuthenticated(req: Request, res: Response, next: NextFunction)
 
 export function isAuthorized(req: Request, res: Response, next: NextFunction) {
     const { user } = res.locals;
-    if (user.isAdmin == true) return next();
+    if (user.isAdmin == 1) return next();
     res.status(403).send("You do not have permition to aceess this resource");
 } 

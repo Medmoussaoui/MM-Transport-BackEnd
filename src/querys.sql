@@ -46,6 +46,7 @@ CREATE TABLE Invoices(
     tableId INT NOT NULL,
     invoiceName VARCHAR(30) DEFAULT "non",
     pay_status VARCHAR(10) DEFAULT "unpay",
+    save TINYINT DEFAULT 0,
     dateCreate DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY(tableId) REFERENCES Tables(tableId)
 );
@@ -67,7 +68,7 @@ SELECT
    services.serviceType, 
    services.price, 
    services.note, 
-   services.pay_status,
+   services.pay_from,
    drivers.driverName,
    trucks.truckNumber,
    partners.partnerName AS "TruckOnwer",
@@ -101,8 +102,8 @@ SELECT
    table_services_view.note,
    table_services_view.driverName,
    table_services_view.truckNumber,
-   table_services_view.TruckOnwer,
-   table_services_view.pay_status AS "service_pay_status",
+   table_services_view.TruckOwner,
+   table_services_view.pay_from AS "service_pay_from",
    table_services_view.dateCreate AS "service_date_create"
 FROM
    invoices
@@ -111,25 +112,57 @@ INNER JOIN
 ON invoices.invoiceId = invoice_serveses.invoiceId
 INNER JOIN table_services_view
 ON table_services_view.serviceId = invoice_serveses.serviceId
-ORDER BY invoiceId ASC, table_services_view.dateCreate DESC 
+ORDER BY invoiceId ASC, table_services_view.boatName ASC, table_services_view.dateCreate ASC 
 
 ------------------
 -- Table_info_view
-CREATE VIEW table_info_view AS
-SELECT DISTINCT
+CREATE VIEW tables_info_view AS 
+SELECT 
    tables.*,
-   table_services_view.boatName
+   GROUP_CONCAT(b.boatName SEPARATOR " , ") as boats
 FROM 
    tables
-INNER JOIN 
-   table_services_view
-ON tables.tableId = table_services_view.tableId
-ORDER BY tableId ASC
-LIMIT 3
+LEFT JOIN
+   (
+      SELECT DISTINCT
+        tt.tableId,
+        services.boatName
+      from
+         tables tt 
+      INNER JOIN 
+         services 
+      ON tt.tableId = services.tableId
+    ) b
+ON tables.tableId = b.tableId
+GROUP BY tables.tableId
+ORDER BY boats DESC , tables.lastEdit DESC
+
 
 
 --------------------
 --- new_services_view
-CREATE VIEW new_services_view AS
-SELECT * from services WHERE tableId IS NULL
-ORDER BY driverId ASC, dateCreate DESC;
+CREATE VIEW new_services_view AS 
+SELECT 
+   services.tableId,
+   services.serviceId,
+   services.truckId,
+   services.driverId,
+   services.boatName,
+   services.serviceType, 
+   services.price, 
+   services.note, 
+   services.pay_from,
+   drivers.driverName,
+   trucks.truckNumber,
+   partners.partnerName AS "TruckOwner",
+   services.dateCreate
+FROM 
+    services
+INNER JOIN drivers 
+ON drivers.driverId = services.driverId
+INNER JOIN trucks 
+ON trucks.truckId = services.truckId
+INNER JOIN partners 
+ON partners.partnerId = trucks.partnerId
+WHERE services.tableId IS NULL
+ORDER BY services.driverId ASC, services.dateCreate DESC

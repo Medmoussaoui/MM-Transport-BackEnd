@@ -10,20 +10,21 @@ export class ServicessModule {
             note: service.note,
             driverId: service.driverId,
             truckId: service.truckId,
-            tableId: service.tableId
-        });
+        }).returning("serviceId");
     }
 
     static async getServiceById(serviceId: string): Promise<any[]> {
         return await mysqldb("services").select("*").where({ serviceId });
     }
 
-
-    static async deleteOne(serviceId: string): Promise<number> {
-        return await mysqldb("services").delete().where({ serviceId });
+    static async getServices(driverId: string, page: number) {
+        return await mysqldb("new_services_view").select("*")
+            .where({ driverId })
+            .limit(20)
+            .offset(page);
     }
 
-    static async deleteMulti(serviceIds: string[]): Promise<number> {
+    static async delete(serviceIds: string[]): Promise<number> {
         return await mysqldb("services").delete().whereIn("serviceId", serviceIds);
     }
 
