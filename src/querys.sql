@@ -166,3 +166,12 @@ INNER JOIN partners
 ON partners.partnerId = trucks.partnerId
 WHERE services.tableId IS NULL
 ORDER BY services.driverId ASC, services.dateCreate DESC
+
+
+--- Set_boatNames_view
+CREATE VIEW Set_table_boats_view AS SELECT DISTINCT
+  tableId, boatName
+FROM 
+  services
+WHERE tableId != NULL 
+ORDER BY boatName ASC;

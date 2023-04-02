@@ -12,10 +12,6 @@ export class AddServiceController {
         this.setDriverId();
     }
 
-    invalidServiceData(): void {
-        this.res.status(401).send("Invalid Service Data");
-    }
-
     invalidTruckId() {
         this.res.status(401).send("invalid truck");
     }

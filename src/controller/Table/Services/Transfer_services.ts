@@ -31,11 +31,11 @@ export class TransferTableServicesController {
     }
 
     successTransferServices(): void {
-        this.res.send("Services Transfered Success");
+        this.res.send("Services are Transferred Success");
     }
 
     faildTransferServices(): void {
-        this.res.status(400).send("Services Transfered Faild");
+        this.res.status(400).send("Services are Aready Transferd");
     }
 
     async transfer(): Promise<number> {

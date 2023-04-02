@@ -22,8 +22,8 @@ export class DeleteServiceController {
         return true;
     }
 
-    async delete(): Promise<void> {
+    async delete(): Promise<number> {
         const { services } = this.req.body;
-        await ServicessModule.delete(services);
+        return await ServicessModule.delete(services);
     }
 }

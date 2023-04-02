@@ -40,21 +40,30 @@ export class InvoiceController {
     }
 
     async addNewService(req: Request, res: Response) {
+        req.body.tableId = 0; // This just to skip verifyInput() 
         const controller = new AddServiceInvoiceController(req, res);
-
         if (!controller.verifyInput()) {
             return AppResponce.badRequest(res);
         }
 
-        const validTableId = await controller.checkTableId();
-        const validTruckId = await controller.checkTruckId();
+        const invoice = await controller.getInvoiceInfo();
+        if (invoice.length <= 0) {
+            return res.status(404).send("invoice not found");
+        }
 
-        if (!validTableId) return controller.invalidTableId();
+        const isInvoicePayed = controller.checkIfInvoiceIsPayed(invoice[0]);
+        if (isInvoicePayed) {
+            return controller.canNotDeleteOrUpdateService();
+        }
+
+        const validTruckId = await controller.checkTruckId();
         if (!validTruckId) return controller.invalidTruckId();
 
+        controller.setTableId(invoice[0]);
         controller.setDriverId();
-        await controller.add();
-        res.send("Service Added");
+
+        const service = await controller.add();
+        res.send(service);
     }
 
     async getInvoiceById(req: Request, res: Response) {
@@ -127,13 +136,15 @@ export class InvoiceController {
             return controller.invoiceNotFound();
         }
 
-        if (controller.isUnPayed(invoice[0])) {
-            await controller.payed();
-            return controller.payedSuccess();
+        if (controller.hasConflict(invoice)) return;
+
+        if (controller.payStatus() == "paid") {
+            await controller.paid();
+            return controller.paidSuccess();
         }
 
-        await controller.unPayed();
-        controller.unPayedSuccess();
+        await controller.unPaid();
+        controller.unPaidSuccess();
     }
 
     async saveInvoice(req: Request, res: Response) {

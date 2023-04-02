@@ -11,8 +11,8 @@ export class CreateTableController {
         this.res = res;
     }
 
-    successCreateTable() {
-        this.res.send("Success Create Table");
+    successCreateTable(table: any) {
+        this.res.send(table);
     }
 
     checkIfNoTableName(): boolean {
@@ -25,7 +25,7 @@ export class CreateTableController {
         this.res.status(400).send("Table Name Is Required");
     }
 
-    async create(): Promise<number> {
+    async create(): Promise<any[]> {
         const tableName = this.req.header("tableName");
         return await TablesModule.createTable(tableName!);
     }

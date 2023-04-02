@@ -20,7 +20,7 @@ export class AccountController {
         res.status(200).send("You are logged");
     }
 
-    changePassword(req: Request, res: Response) {
+    async changePassword(req: Request, res: Response) {
 
     }
 }

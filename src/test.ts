@@ -116,7 +116,7 @@ async function testUpdateTableService() {
         note: ""
     };
 
-    const result = await TablesModule.updateService(body);
+    const result = await ServicessModule.update(body);
     console.log(result);
 }
 
@@ -169,6 +169,24 @@ async function testGetTableInvoices() {
     console.log(tableInvoices[0]);
 }
 
+/*
+async function testSmartTransferService() {
+    const controller = new TestSmartTransferServices();
+    const service = await controller.db.getDriverServices(1);
+
+    if (service.length <= 0) {
+        console.log("No Services Fond");
+        return;
+    }
+    console.log(service);
+    console.log("/////////////////////////////////////////////");
+    await controller.transfer(service);
+    const statusCode = (controller.unKnownBoats.length <= 0) ? 400 : 200;
+    console.log(controller.generateResponceBody());
+
+    console.log("Can Not Transfer Unknown Services");
+}
+*/
 ////////////////////////// RUN TEST ///////////////////////////////
 async function runTests() {
 
@@ -185,7 +203,8 @@ async function runTests() {
     // addTableInvoiceServices();
     // createInvoice();
     // await testInvoiceConverter();
-    testGetTableInvoices();
+    // testGetTableInvoices();
+    // testSmartTransferService();
 }
 
 runTests();

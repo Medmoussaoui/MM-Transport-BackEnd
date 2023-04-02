@@ -1,6 +1,5 @@
 import { Request, Response } from "express";
 import { InvoiceModule } from "../../module/invoice.model";
-import { AddServiceController } from "../services/add_service_controller";
 import { AddServiceTableController } from "../Table/Services/Add_service";
 
 export class AddServiceInvoiceController extends AddServiceTableController {
@@ -13,18 +12,34 @@ export class AddServiceInvoiceController extends AddServiceTableController {
         this.res = res;
     }
 
-
     verifyInput(): boolean {
-        const { invoiceId, boatName } = this.req.body;
+        const { invoiceId } = this.req.body;
         if (invoiceId == undefined || invoiceId == "") return false;
         return super.verifyInput();
     }
 
-    async checkTableId(): Promise<boolean> {
-        const { invoiceId, tableId } = this.req.body;
-        const invoiceInfo = await InvoiceModule.getInvoiceInfo(invoiceId);
-        if (invoiceInfo.length > 0) return (invoiceInfo[0].tableId == tableId);
-        return false;
+    setTableId(invoiceInfo: any): void {
+        this.req.body.tableId = invoiceInfo.tableId;
+    }
+
+    async getInvoiceInfo(): Promise<any[]> {
+        const { invoiceId } = this.req.body;
+        return await InvoiceModule.getInvoiceInfo(invoiceId);
+    }
+
+    checkIfInvoiceIsPayed(invoiceInfo: any): boolean {
+        return invoiceInfo.pay_status == "payed";
+    }
+
+    canNotDeleteOrUpdateService(): void {
+        this.res.status(400).send("Can Not Delete Or Update Service of Incoice Payed");
+    }
+
+    async add(): Promise<any[]> {
+        const service = await super.add();
+        const serviceId = service[0];
+        await InvoiceModule.addService(this.req.body.invoiceId, serviceId);
+        return service;
     }
 
 }

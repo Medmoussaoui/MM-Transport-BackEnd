@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { getPageIndex } from "../../core/functions/get_page_index";
 import { ServicessModule } from "../../module/service.model";
 
 export class GetServicesController {
@@ -15,15 +16,13 @@ export class GetServicesController {
         return this.res.locals.user.driverId;
     }
 
-    getPageIndex(): number {
-        let page = this.req.header("page");
-        if (page == undefined || page == "1") return 0;
-        return parseInt(page) * 20;
+    getPage(): string {
+        return this.req.header("page") ?? "0";
     }
 
     async getServices(): Promise<any[]> {
         const driverId = this.getDriverId();
-        const page = this.getPageIndex();
+        const page = getPageIndex(20, this.getPage());
         return await ServicessModule.getServices(driverId, page);
     }
 }

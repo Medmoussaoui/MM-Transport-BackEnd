@@ -25,16 +25,17 @@ export class GetTableServicesController {
         return this.req.header('tableId')!;
     }
 
+
     getPage(): string {
-        return this.req.header("page") ?? "";
+        return this.req.header("page") ?? "0";
     }
+
 
     async getServices(): Promise<any[]> {
         const tableId = this.getTableId();
-        const page = this.getPage();
-        const pageIndex = getPageIndex(20, page);
-        const service = await TablesModule.getServices(tableId, pageIndex);
+        const pageIndex = getPageIndex(20, this.getPage());
+        const service = TablesModule.getServices(tableId, pageIndex);
         await TablesModule.updateLastEdit(tableId);
-        return service;
+        return await service;
     }
 }

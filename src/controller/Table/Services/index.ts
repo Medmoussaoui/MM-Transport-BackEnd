@@ -20,17 +20,22 @@ export class TableServicesController {
     async addService(req: Request, res: Response) {
         const controller = new AddServiceTableController(req, res);
 
-        if (!controller.verifyInput()) return AppResponce.badRequest(res);
+        if (!controller.verifyInput()) {
+            return AppResponce.badRequest(res);
+        }
 
-        const validTableId = await controller.checkTableId();
-        const validTruckId = await controller.checkTruckId();
+        const validTableId = controller.checkTableId();
+        const validTruckId = controller.checkTruckId();
 
+        await validTableId
+        await validTruckId
+        
         if (!validTableId) return controller.invalidTableId();
         if (!validTruckId) return controller.invalidTruckId();
 
         controller.setDriverId();
-        await controller.add();
-        res.send("Service Added");
+        const service = await controller.add();
+        res.send(service);
     }
 
     async editService(req: Request, res: Response) {
@@ -54,13 +59,13 @@ export class TableServicesController {
 
     async deleteServices(req: Request, res: Response) {
         const controller = new DeleteServiceTableController(req, res);
-        
+
         if (!controller.checkBodyInput()) {
             return AppResponce.badRequest(res);
         }
 
         await controller.delete();
-        res.send("Delete Done");
+        res.send("Delete Success");
     }
 
     async transferServices(req: Request, res: Response) {
@@ -77,7 +82,7 @@ export class TableServicesController {
         if (result > 0) {
             return controller.successTransferServices();
         }
-        
+
         controller.faildTransferServices();
     }
 }

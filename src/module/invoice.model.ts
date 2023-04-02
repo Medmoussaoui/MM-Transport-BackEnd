@@ -15,10 +15,10 @@ export class InvoiceModule {
         }, ["invoiceId"]);
     }
 
-    static async saveInvoice(invoiceId: any):Promise<number> {
+    static async saveInvoice(invoiceId: any): Promise<number> {
         return await mysqldb.update({ save: 1 })
-        .from('invoices')
-        .where({invoiceId});
+            .from('invoices')
+            .where({ invoiceId });
     }
     static async getInvoiceById(invoiceId: string): Promise<any[]> {
         return mysqldb.select("*").from("invoice_services_view").where({ invoiceId });
@@ -76,20 +76,20 @@ export class InvoiceModule {
         return mysqldb.select("*").from("invoice_services_view").where({ tableId });
     }
 
-    static async setInvociePayed(invoiceId: string): Promise<number> {
-        return await mysqldb.update({ pay_status: "payed" })
+    static async setInvociePaid(invoiceId: string): Promise<number> {
+        return await mysqldb.update({ pay_status: "paid" })
             .from("invoices")
             .where({ invoiceId });
     }
 
-    static async setInvocieUnPayed(invoiceId: string): Promise<number> {
-        return await mysqldb.update({ pay_status: "unpayed" })
+    static async setInvocieUnPaid(invoiceId: string): Promise<number> {
+        return await mysqldb.update({ pay_status: "unpaid" })
             .from("invoices")
             .where({ invoiceId });
     }
 
 
-    static async setInvoiceServicePayed(invoiceId: string): Promise<number> {
+    static async setInvoiceServicePaid(invoiceId: string): Promise<number> {
         return await mysqldb("services").update({ pay_from: invoiceId })
             .whereNull("pay_from")
             .andWhere(
@@ -99,9 +99,10 @@ export class InvoiceModule {
             );
     }
 
-    static async setInvoiceServiceUnpayed(invoiceId: string): Promise<number> {
-        return await mysqldb("services").update({ pay_from: null })
-            .whereRaw('pay_from = ?', [invoiceId]);
+    static async setInvoiceServiceUnpaid(invoiceId: string): Promise<number> {
+        return await mysqldb("services")
+            .update({ pay_from: null })
+            .where({ pay_from: invoiceId });
     }
 
 }

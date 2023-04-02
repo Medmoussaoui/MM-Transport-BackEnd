@@ -12,36 +12,16 @@ export class InvoiceConverter {
         }
     }
 
-    setInvoiceId(row: any): void {
-        this.invoice.invoiceId = row.invoiceId;
-    }
-
-    setInvoiceTableId(row: any) {
-        this.invoice.tableId = row.tableId;
-    }
-
-    setInvoiceName(row: any): void {
-        this.invoice.invoiceName = row.invoiceName;
-    }
-
-    setInvoicePayStatus(row: any): void {
-        this.invoice.pay_status = row.invoice_pay_status;
-    }
-
-    setInvoiceDateCreate(row: any): void {
-        this.invoice.dateCreate = row.invoice_date_create;
-    }
-
     initInvoiceInfo(): void {
         const row = this.invoiceData[0];
-        this.setInvoiceId(row);
-        this.setInvoiceTableId(row);
-        this.setInvoiceName(row);
+        this.invoice.invoiceId = row.invoiceId;
+        this.invoice.tableId = row.tableId;
+        this.invoice.invoiceName = row.invoiceName;
         this.invoice.totalSummation = 0;
         this.invoice.totalPayingOff = 0;
         this.invoice.finalTotal = 0;
-        this.setInvoicePayStatus(row);
-        this.setInvoiceDateCreate(row);
+        this.invoice.pay_status = row.invoice_pay_status;
+        this.invoice.dateCreate = row.invoice_date_create;
         this.invoice.services = [];
     }
 
@@ -60,7 +40,7 @@ export class InvoiceConverter {
         }
     }
 
-    isServicePayed(service: Service): boolean {
+    isServicePaid(service: Service): boolean {
         // we check if the service is paid from another invoice because 
         // if yes should exclude the service price with an 
         // accounting of the invoice
@@ -70,7 +50,7 @@ export class InvoiceConverter {
 
     addExtractedService(service: Service): void {
         this.invoice.services?.push(service);
-        if (this.isServicePayed(service)) return;
+        if (this.isServicePaid(service)) return;
 
         if (service.serviceType == "Paye") {
             this.icrementTotalPayingOff(service.price!);

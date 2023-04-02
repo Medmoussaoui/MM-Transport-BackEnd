@@ -39,9 +39,9 @@ export class EditServiceController {
         return pay_status == "pay";
     }
 
-    async update() {
+    async update(): Promise<any[]> {
         const { body } = this.req;
-        await ServicessModule.update(body);
+        return await ServicessModule.update(body);
     }
 
 }

@@ -1,5 +1,4 @@
 import { Request, Response } from "express";
-import { ServicessModule } from "../../../module/service.model";
 import { TablesModule } from "../../../module/tables.model";
 import { DeleteServiceController } from "../../services/delete_service_controller";
 
@@ -19,9 +18,9 @@ export class DeleteServiceTableController extends DeleteServiceController {
         return super.checkBodyInput();
     }
 
-    async delete(): Promise<void> {
-        const { services, tableId } = this.req.body;
-        await ServicessModule.delete(services);
-        await TablesModule.updateLastEdit(tableId);
+    async delete(): Promise<number> {
+        const { tableId } = this.req.body;
+        TablesModule.updateLastEdit(tableId);
+        return await super.delete();
     }
 }

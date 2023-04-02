@@ -1,5 +1,6 @@
 import express from "express";
 import { ServicesController } from "../controller/services";
+import { expressAsyncCatcher } from "../middlewares/errors";
 
 
 //// .............../Services/
@@ -7,13 +8,14 @@ import { ServicesController } from "../controller/services";
 export const servicesRoute = express.Router();
 const controller = new ServicesController();
 
-servicesRoute.get("/", controller.getServices);
+servicesRoute.get("/", expressAsyncCatcher(controller.getServices));
 
-servicesRoute.post("/new", controller.addService);
+servicesRoute.post("/new", expressAsyncCatcher(controller.addService));
 
-servicesRoute.put("/edit", controller.editService);
+servicesRoute.put("/edit", expressAsyncCatcher(controller.editService));
 
-servicesRoute.delete("/delete", controller.deleteService);
+servicesRoute.delete("/delete", expressAsyncCatcher(controller.deleteService));
 
 /// https://www.api.transport/services/transfer/dsds454dq4s54ds5q4dq5s4
-servicesRoute.post("/transfer/:tableId", (req, res) => { });
+servicesRoute.post("/transfer/custom", expressAsyncCatcher(controller.customTransferServices));
+servicesRoute.post("/transfer/smart", expressAsyncCatcher(controller.smartTransferServices));

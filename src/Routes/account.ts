@@ -9,4 +9,4 @@ export const accountRoute = express.Router();
 const controller = new AccountController();
 
 accountRoute.post("/login", expressAsyncCatcher(controller.login));
-accountRoute.post("/changepassword", controller.changePassword);
+accountRoute.post("/changepassword", expressAsyncCatcher(controller.changePassword));

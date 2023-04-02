@@ -24,12 +24,31 @@ export class InvoicePaymentController {
         return await InvoiceModule.getInvoiceInfo(invoiceId);
     }
 
-    isUnPayed(invoice: any): boolean {
-        const { pay_status } = invoice;
-        return pay_status == "unpayed" && this.req.body.pay_status == "payed";
+    invoiceAreadyPaid(): void {
+        this.res.status(400).send("The invoice is already Paid");
     }
 
-    payStatus(): string {
+    invoiceAreadyUnPaid(): void {
+        this.res.status(400).send("The invoice is already unPaid");
+    }
+
+    hasConflict(invoice: any): boolean {
+        const isInvoicePaid = invoice.pay_from == "paid";
+        const action = this.payStatus();
+
+        if (isInvoicePaid && action == "paid") {
+            this.invoiceAreadyPaid();
+            return true;
+        }
+
+        if (!isInvoicePaid && action == "unpaid") {
+            this.invoiceAreadyUnPaid();
+            return true;
+        }
+        return false;
+    }
+
+    payStatus(): any {
         return this.req.body.pay_status;
     }
 
@@ -37,26 +56,26 @@ export class InvoicePaymentController {
         this.res.status(404).send("invoice Not Found");
     }
 
-    payedSuccess(): void {
+    paidSuccess(): void {
         this.res.send("Invoice Payed Success");
     }
 
-    unPayedSuccess(): void {
+    unPaidSuccess(): void {
         this.res.send("Invoice unPayed Success");
     }
 
-    async payed(): Promise<void> {
+    async paid(): Promise<void> {
         const { invoiceId } = this.req.body;
-        const payedInvoice = InvoiceModule.setInvociePayed(invoiceId);
-        const payedServices = InvoiceModule.setInvoiceServicePayed(invoiceId);
+        const payedInvoice = InvoiceModule.setInvociePaid(invoiceId);
+        const payedServices = InvoiceModule.setInvoiceServicePaid(invoiceId);
         await payedInvoice;
         await payedServices;
     }
 
-    async unPayed(): Promise<void> {
+    async unPaid(): Promise<void> {
         const { invoiceId } = this.req.body;
-        const unPayedInvoice = InvoiceModule.setInvocieUnPayed(invoiceId);
-        const unPayedServices = InvoiceModule.setInvoiceServiceUnpayed(invoiceId);
+        const unPayedInvoice = InvoiceModule.setInvocieUnPaid(invoiceId);
+        const unPayedServices = InvoiceModule.setInvoiceServiceUnpaid(invoiceId);
         await unPayedInvoice;
         await unPayedServices;
     }

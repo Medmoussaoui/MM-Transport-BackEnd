@@ -2,7 +2,7 @@ import { mysqldb } from "../core/config/knex.db.config";
 import { Service } from "./entity/services.entity";
 
 export class ServicessModule {
-    static async addNewService(service: Service) {
+    static async addNewService(service: Service): Promise<any[]> {
         return await mysqldb("Services").insert({
             boatName: service.boatName,
             serviceType: service.serviceType,
@@ -10,7 +10,8 @@ export class ServicessModule {
             note: service.note,
             driverId: service.driverId,
             truckId: service.truckId,
-        }).returning("serviceId");
+            tableId: service.tableId,
+        }).returning("*");
     }
 
     static async getServiceById(serviceId: string): Promise<any[]> {
@@ -24,11 +25,14 @@ export class ServicessModule {
             .offset(page);
     }
 
-    static async delete(serviceIds: string[]): Promise<number> {
-        return await mysqldb("services").delete().whereIn("serviceId", serviceIds);
+    static async delete(serviceIds: any[]): Promise<number> {
+        return await mysqldb("services")
+            .whereIn("serviceId", serviceIds)
+            .andWhere({ pay_from: null })
+            .del()
     }
 
-    static async update(service: Service): Promise<any> {
+    static async update(service: Service): Promise<any[]> {
         const { serviceId } = service;
         return await mysqldb("services").update({
             boatName: service.boatName,
@@ -36,7 +40,7 @@ export class ServicessModule {
             price: service.price,
             note: service.note,
             dateCreate: service.dateCreate,
-        }).where({ serviceId });
+        }).where({ serviceId }).returning("*");
     }
 
 }

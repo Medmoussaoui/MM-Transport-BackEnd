@@ -3,18 +3,6 @@ import { Service, TransferServices } from "./entity/services.entity";
 
 export class TablesModule {
 
-    static async addNewService(service: Service): Promise<any[]> {
-        return await mysqldb("services").insert({
-            boatName: service.boatName,
-            serviceType: service.serviceType,
-            price: service.price,
-            note: service.note,
-            driverId: service.driverId,
-            truckId: service.truckId,
-            tableId: service.tableId,
-        }, ["serviceId"]);
-    }
-
     static async getServices(tableId: string, page: number) {
         const offset = (page == 1) ? 1 : (page * 20);
         return await mysqldb("table_services_view")
@@ -28,11 +16,10 @@ export class TablesModule {
         return await mysqldb("Tables").select("*").where({ tableId });
     }
 
-    static async updateLastEdit(tableId: string) {
-        const result = await mysqldb("Tables")
+    static async updateLastEdit(tableId: any) {
+        return await mysqldb("Tables")
             .update({ lastEdit: mysqldb.fn.now() })
-            .where({ tableId });
-        return result;
+            .where({ tableId});
     }
 
     static async updateTableName(newName: string, tableId: string): Promise<number> {
@@ -52,8 +39,8 @@ export class TablesModule {
             .offset(page);
     }
 
-    static async createTable(tableName: string): Promise<number> {
-        return await mysqldb("Tables").insert({ tableName });
+    static async createTable(tableName: string): Promise<any[]> {
+        return await mysqldb("Tables").insert({ tableName }).returning("*");
     }
 
     static async changeServicesTable(services: TransferServices): Promise<number> {

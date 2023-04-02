@@ -1,5 +1,4 @@
 import { Request, Response } from "express";
-import { ServicessModule } from "../../../module/service.model";
 import { TablesModule } from "../../../module/tables.model";
 import { EditServiceController } from "../../services/edit_service";
 
@@ -20,10 +19,10 @@ export class EditTableServiceController extends EditServiceController {
         return super.checkBodyInput();
     }
 
-    async update(): Promise<void> {
-        const { body } = this.req;
-        ServicessModule.update(body);         
-        await TablesModule.updateLastEdit(body.tableId);
+    async update(): Promise<any[]> {
+        const service = super.update();
+        await TablesModule.updateLastEdit(this.req.body.tableId);
+        return await service;
     }
 
 }
