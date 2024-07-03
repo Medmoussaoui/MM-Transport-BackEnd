@@ -12,6 +12,7 @@ export interface Service {
     note?: string,
     pay_from?: string,
     dateCreate?: string;
+    inactive?: boolean;
 }
 
 export interface TransferServices {

@@ -1,19 +1,17 @@
-import { TableInvoice } from "../../../module/entity/invoice.entity";
+import { Invoice } from "../../../module/entity/invoice.entity";
 import { Service } from "../../../module/entity/services.entity";
 
 export class InvoiceConverter {
-    invoice: TableInvoice = {};
-    invoiceData: any[];
+    invoice: Invoice = {};
 
-    constructor(invoiceData: any[]) {
-        this.invoiceData = invoiceData;
-        if (invoiceData.length >= 1) {
-            this.initInvoiceInfo();
-        }
-    }
+    isInvoiceInfoInit: boolean = false;
 
-    initInvoiceInfo(): void {
-        const row = this.invoiceData[0];
+    /// store first invoice pay_satus value in pay_status variable to get back
+    /// the first value when we need
+    ///
+    pay_status: string = "";
+
+    initInvoiceInfo(row: any): void {
         this.invoice.invoiceId = row.invoiceId;
         this.invoice.tableId = row.tableId;
         this.invoice.invoiceName = row.invoiceName;
@@ -21,12 +19,15 @@ export class InvoiceConverter {
         this.invoice.totalPayingOff = 0;
         this.invoice.finalTotal = 0;
         this.invoice.pay_status = row.invoice_pay_status;
+        this.invoice.padiDate = row.invoice_paid_date;
         this.invoice.dateCreate = row.invoice_date_create;
+        this.invoice.save = row.save;
         this.invoice.services = [];
     }
 
-    extractService(service: any): Service {
+    toService(service: any): Service {
         return {
+            tableId: service.service_table_id,
             serviceId: service.serviceId,
             boatName: service.boatName,
             serviceType: service.serviceType,
@@ -40,23 +41,67 @@ export class InvoiceConverter {
         }
     }
 
-    isServicePaid(service: Service): boolean {
-        // we check if the service is paid from another invoice because 
-        // if yes should exclude the service price with an 
-        // accounting of the invoice
-        const currentInvoiceId = this.invoice.invoiceId?.toString();
-        return (service.pay_from != null && service.pay_from != currentInvoiceId);
+    /// isServiceInactive() check if the service is paid from other invoice
+    /// to make sure not include the service price with the total of invoice
+    /// because the current invoice is Aready paid from other invoice
+    /// 
+    /// And if the invoice pay_status = "Paid" and the current service pay_status = null
+    /// we should not include the price of current service to total price of invoice too
+    /// this situation happen when was the service paid in other invoice and the user 
+    /// cancel the invoice payment so the current service pay_status will be null
+    /// and currently the current invoice is paid with out the current service
+    ///
+    /// 
+    isServiceInactive(service: Service): boolean {
+        if (this.isPaidFromOtherInvoice(service)) {
+            return true;
+        }
+
+        if (this.isUnPaidFromOtherInvoice(service)) {
+            return true;
+        }
+
+        return false
     }
 
-    addExtractedService(service: Service): void {
-        this.invoice.services?.push(service);
-        if (this.isServicePaid(service)) return;
+    /// when cancel invoice payment the service.pay_from will be null
+    /// 
+    isUnPaidFromOtherInvoice(service: Service): boolean {
+        const invoicePaid = this.pay_status == "paid";
+        return (service.pay_from == null) && invoicePaid;
+    }
 
-        if (service.serviceType == "Paye") {
-            this.icrementTotalPayingOff(service.price!);
+    isPaidFromOtherInvoice(service: Service): boolean {
+        if (service.pay_from) {
+            return service.pay_from != this.invoice.invoiceId?.toString();
+        }
+        return false;
+    }
+
+
+
+    isPayingOff(serviceType: string) {
+        if (serviceType == "Paye") return true;
+        if (serviceType == "دفع") return true;
+        if (serviceType == "مدفوعة") return true;
+        if (serviceType == "تسبيق") return true;
+        if (serviceType == "خالص") return true;
+        if (serviceType == "شديت") return true;
+        if (serviceType == "خديت") return true;
+        return false;
+    }
+
+    addServiceToInvoice(service: Service): void {
+        this.invoice.services?.push(service);
+
+        if (this.isServiceInactive(service)) {
+            service.inactive = true;
+            if (this.invoice.inactive == null) this.invoice.inactive = true;
             return;
         }
 
+        this.invoice.inactive = false;
+        if (this.isPayingOff(service.serviceType!)) return this.icrementTotalPayingOff(service.price!);
         this.icrementTotalSummition(service.price!);
     }
 
@@ -73,11 +118,15 @@ export class InvoiceConverter {
         this.invoice.finalTotal = (totalSummation! - totalPayingOff!);
     }
 
-    convert(): TableInvoice {
-        for (let row of this.invoiceData) {
-            const service = this.extractService(row);
-            this.addExtractedService(service);
+    insert(row: any): Invoice {
+        if (!this.isInvoiceInfoInit) {
+            this.initInvoiceInfo(row);
+            this.pay_status = this.invoice.pay_status!;
+            this.isInvoiceInfoInit = true;
+
         }
+        const service = this.toService(row);
+        this.addServiceToInvoice(service);
         this.setFinalTotal();
         return this.invoice;
     }

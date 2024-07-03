@@ -1,5 +1,5 @@
 export interface TransferResult {
     message: string,
-    known: any[],
-    unKnown: any[],
+    known: number,
+    unKnown: number,
 }

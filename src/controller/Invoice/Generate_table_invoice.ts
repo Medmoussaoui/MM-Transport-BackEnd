@@ -1,9 +1,10 @@
 import { Request, Response } from "express";
-import { InvoiceController } from ".";
-import { InvoiceConverter } from "../../core/class/invoice/invoice_converter";
-import { TableInvoice } from "../../module/entity/invoice.entity";
 import { InvoiceModule } from "../../module/invoice.model";
 import { TablesModule } from "../../module/tables.model";
+import { Invoice } from "../../module/entity/invoice.entity";
+import { convertToInvoice } from "../../core/functions/convert_to_invoice";
+import { mysqldb } from "../../core/config/knex.db.config";
+import { GenerateTableInvoiceModule } from "../../module/generate_table_invoice";
 
 export class GenerateTableInvoiceController {
     req: Request;
@@ -16,32 +17,42 @@ export class GenerateTableInvoiceController {
 
     ifNoTableId(): boolean {
         const tableId = this.getTableId();
-        if (tableId == undefined || tableId == "") return true;
+        if (tableId == undefined || tableId == 0) return true;
         return false;
     }
 
-    async verifyTableId(): Promise<boolean> {
-        const table = await TablesModule.getTableById(this.getTableId());
-        return table.length > 0;
+    hasService(tableInfo: any): boolean {
+        return tableInfo["totalUnpaidServices"] >= 1;
+    }
+
+    setInvoicName(tableName: string) {
+        this.req.body.invoiceName = this.req.body.invoiceName ?? tableName;
+    }
+
+    async getTableById(): Promise<any> {
+        if (this.getTableId() == null) return true;
+        const query = await TablesModule.getTableById(this.getTableId());
+        return query[0];
     }
 
     invalidTableId(): void {
         this.res.status(400).send("Table Id is Required");
     }
 
-    getTableId(): string {
-        return this.req.header("tableId")!;
+    noTableFound(): void {
+        this.res.status(400).send("no Table Found");
     }
 
-    convertToTableInvoice(invoiceData: any[]): TableInvoice {
-        return new InvoiceConverter(invoiceData).convert();
+    getTableId(): number {
+        return this.req.body.tableId;
     }
 
-    async generateInoivce(): Promise<TableInvoice> {
-        const tableId = this.getTableId();
-        const invoiceId = await InvoiceModule.newTableInvoice(tableId);
+    async generateInoivce(): Promise<Invoice> {
+        const { tableId, invoiceName } = this.req.body;
+        const model = new GenerateTableInvoiceModule(tableId, invoiceName);
+        const invoiceId = await model.create();
         const invoiceData = await InvoiceModule.getInvoiceById(invoiceId.toString());
-        return this.convertToTableInvoice(invoiceData);
+        return convertToInvoice(invoiceData);
     }
 }
 

@@ -1,7 +1,9 @@
 import { Request, Response } from "express";
-import { InvoiceConverter } from "../../core/class/invoice/invoice_converter";
-import { TableInvoice } from "../../module/entity/invoice.entity";
 import { InvoiceModule } from "../../module/invoice.model";
+import { Invoice } from "../../module/entity/invoice.entity";
+import { TableInvoicesConverter } from "../../core/class/invoice/table_invoices_converter";
+import { getPageIndex } from "../../core/functions/get_page_index";
+import { mysqldb } from "../../core/config/knex.db.config";
 
 export class GetTableInvoicesController {
     req: Request;
@@ -16,26 +18,25 @@ export class GetTableInvoicesController {
         return this.req.params.tableId;
     }
 
-    convertToTableInvoice(rows: any[]): TableInvoice[] {
-        let currentInvoiceId;
-        let invoiceConverter: InvoiceConverter;
-        const tableInvoices: TableInvoice[] = [];
-
-        for (let row of rows) {
-            if (currentInvoiceId != row.invoiceId) {
-                invoiceConverter = new InvoiceConverter([row]);
-                tableInvoices.push(invoiceConverter.invoice);
-                currentInvoiceId = invoiceConverter.invoice.invoiceId;
-            }
-            invoiceConverter!.invoiceData = [row];
-            invoiceConverter!.convert();
-        }
-
-        return tableInvoices;
+    convertToTableInvoices(rows: any[]): Invoice[] {
+        const converter = new TableInvoicesConverter(rows);
+        return converter.convert()[0].invoices;
     }
 
-    async getTableInvoices(): Promise<any[]> {
-        return await InvoiceModule.tableInvoices(this.getTableId());
+    getPage(): number {
+        const page = this.req.header("page");
+        return getPageIndex(10, page);
+    }
+
+    async getInvoiceIds(page: number): Promise<any[]> {
+        return mysqldb.distinct("invoiceId").
+            from("invoices_view")
+            .where({ tableId: this.getTableId(), visible: 1, save: 1 })
+            .limit(10).offset(page);
+    }
+
+    async getTableInvoices(invoiceIds: number[]): Promise<any[]> {
+        return await InvoiceModule.tableInvoices(this.getTableId(), invoiceIds);
     }
 
 }

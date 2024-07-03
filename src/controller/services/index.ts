@@ -21,12 +21,12 @@ export class ServicesController {
 
         if (!controller.verifyInput()) return AppResponce.badRequest(res);
 
-        const validTruckId = await controller.checkTruckId();
+        const validTruckId = await controller.checkTruckNumber();
 
         if (!validTruckId) return controller.invalidTruckId();
 
         const service = await controller.add();
-        res.status(201).send(service);
+        res.status(201).send(service[0]);
     }
 
     async editService(req: Request, res: Response) {
@@ -39,13 +39,12 @@ export class ServicesController {
             return controller.invalidServiceId();
         }
 
-        const isPayed = controller.isServicePayed(service[0]);
-        if (isPayed) {
-            return controller.canNotEditServicePayed();
-        }
+        let isValidTruck = await controller.checkTruckNumber();
+        if (!isValidTruck) return controller.invalidTruckId();
 
-        await controller.update();
-        res.status(200).send("service Updated");
+        const update = await controller.update();
+
+        res.status(200).send(update[0]);
     }
 
 
@@ -70,24 +69,13 @@ export class ServicesController {
             return controller.invalidTableId();
         }
 
-        const result = await controller.transfer();
-        if (result > 0) {
-            return controller.successTransferServices();
-        }
-
-        controller.faildTransferServices();
+        await controller.transfer();
+        return controller.successTransferServices();
     }
 
     async smartTransferServices(req: Request, res: Response) {
         const controller = new SmartTransferServices(req, res);
-        const driverId = getDriverId(res);
-        const services = await controller.db.getDriverServices(driverId);
-
-        if (services.length <= 0) {
-            return res.status(404).send("No Services Found To Transfer");
-        }
-
-        const result = await controller.transfer(services);
-        res.status(controller.statusCode()).send(result);
+        const result =  await controller.start();
+        res.send(result);
     }
 }

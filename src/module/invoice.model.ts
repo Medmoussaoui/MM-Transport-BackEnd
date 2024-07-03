@@ -2,64 +2,54 @@ import { mysqldb } from "../core/config/knex.db.config";
 
 export class InvoiceModule {
 
-    static async getInvoiceInfo(invoiceId: string): Promise<any[]> {
-        return await mysqldb.select("*").from("invoices").where({ invoiceId });
+    /// will return tableId of evry table has invoices
+    ///
+    static async getTablesHasInvoices(page: number): Promise<any[]> {
+        return await mysqldb.distinct("tableId")
+            .from("invoices_view")
+            .limit(5).offset(page);
     }
 
-    static async createInvoice(tableId: string): Promise<number> {
-        return await mysqldb("invoices").insert({
-            tableId,
-            invoiceName: mysqldb.select("tableName as invoiceName")
-                .from("tables")
-                .where({ tableId })
-        }, ["invoiceId"]);
+    static async getNullTableInvoices() {
+        return mysqldb.select("*").from("invoices_view").where({ tableId: null });
+    }
+
+    static async getInvoiceInfo(invoiceId: string): Promise<any[]> {
+        return await mysqldb.select("*").from("invoice_info_view").where({ invoiceId });
     }
 
     static async saveInvoice(invoiceId: any): Promise<number> {
-        return await mysqldb.update({ save: 1 })
+        return await mysqldb.update({ "save": "1" })
             .from('invoices')
             .where({ invoiceId });
     }
+
     static async getInvoiceById(invoiceId: string): Promise<any[]> {
-        return mysqldb.select("*").from("invoice_services_view").where({ invoiceId });
+        return mysqldb.select("*").from("invoices_view").where({ invoiceId });
+    }
+
+    static async markInvoicesUnVisible(invoiceIds: any[]): Promise<number> {
+        return await mysqldb("invoices").update({ visible: 0 })
+            .whereIn("invoiceId", invoiceIds).andWhere({ pay_status: "paid" });
     }
 
     static async deleteInvoices(invoiceIds: any[]): Promise<number> {
-        return await mysqldb("invoices").delete().whereIn("invoiceId", invoiceIds);
+        return await mysqldb("invoices").delete()
+            .whereIn("invoiceId", invoiceIds).andWhere({ pay_status: "unpaid" });
     }
 
-    static async getInvoices(page: number): Promise<any[]> {
+    static async getInvoices(tableIds: any[]): Promise<any[]> {
         return mysqldb.select("*")
-            .from("invoice_services_view")
-            .limit(20).offset(page);
+            .from("invoices_view")
+            .whereIn("tableId", tableIds)
+            .andWhere({ save: 1, visible: 1 });
     }
 
-    static async newTableInvoice(tableId: string): Promise<number> {
-        // this methode create new invoice and link all 
-        // table service with the current invoice created And 
-        // will be returning the [invoice Id]
-        const invoiceId = await this.createInvoice(tableId);
-
-        const tableServices = await mysqldb("table_services_view")
-            .select('serviceId', mysqldb.raw('? as invoiceId', invoiceId))
-            .where({ tableId })
-
-        await mysqldb.insert(tableServices).into("invoice_serveses");
-        return invoiceId;
-    }
-
-    static async newCustomInvoice(tableId: string, serviceIds: string[]): Promise<number> {
-        // this methode create new invoice and link Custom 
-        // table service with the current invoice created And 
-        // will be returning the [invoice Id]
-        const invoiceId = await this.createInvoice(tableId);
-
-        const tableServices = await mysqldb("table_services_view")
-            .select('serviceId', mysqldb.raw('? as invoiceId', invoiceId))
-            .where({ tableId }).whereIn("serviceId", serviceIds);
-
-        await mysqldb.insert(tableServices).into("invoice_serveses");
-        return invoiceId;
+    static async getInvoicesByIds(invoiceIds: number[]): Promise<any[]> {
+        return mysqldb.select("*")
+            .from("invoices_view")
+            .whereIn("invoiceId", invoiceIds)
+            .andWhere({ save: 1, visible: 1 });
     }
 
     static async addService(invoiceId: string, serviceId: string): Promise<number[]> {
@@ -67,42 +57,26 @@ export class InvoiceModule {
     }
 
     static async deleteServices(invoiceId: string, serviceIds: any[]): Promise<number> {
-        return await mysqldb.delete().from('invoice_serveses')
-            .whereIn("serviceId", serviceIds)
+        return await mysqldb("invoice_serveses").del().whereIn("serviceId", serviceIds)
             .andWhere({ invoiceId })
     }
 
-    static tableInvoices(tableId: string | number): Promise<any[]> {
-        return mysqldb.select("*").from("invoice_services_view").where({ tableId });
+    static tableInvoices(tableId: string | number, invoiceIds: number[]): Promise<any[]> {
+        return mysqldb.select("*")
+            .from("invoices_view").whereIn("invoiceId", invoiceIds)
+            .andWhere({ tableId, save: 1, visible: 1 });
     }
 
-    static async setInvociePaid(invoiceId: string): Promise<number> {
-        return await mysqldb.update({ pay_status: "paid" })
-            .from("invoices")
+    static async getInvoiceByName(keyword: string, pageIndex: number): Promise<any[]> {
+        return await mysqldb.select("*")
+            .from("invoices_view")
+            .whereLike("invoiceName", `%${keyword}%`).limit(10).offset(pageIndex);
+    }
+
+    static async updateInvoiceName(invoiceName: string, invoiceId: number): Promise<number> {
+        return await mysqldb("invoices")
+            .update({ "invoiceName": invoiceName })
             .where({ invoiceId });
-    }
-
-    static async setInvocieUnPaid(invoiceId: string): Promise<number> {
-        return await mysqldb.update({ pay_status: "unpaid" })
-            .from("invoices")
-            .where({ invoiceId });
-    }
-
-
-    static async setInvoiceServicePaid(invoiceId: string): Promise<number> {
-        return await mysqldb("services").update({ pay_from: invoiceId })
-            .whereNull("pay_from")
-            .andWhere(
-                "serviceId",
-                "in",
-                mysqldb.select("serviceId").from("invoice_serveses").where({ invoiceId })
-            );
-    }
-
-    static async setInvoiceServiceUnpaid(invoiceId: string): Promise<number> {
-        return await mysqldb("services")
-            .update({ pay_from: null })
-            .where({ pay_from: invoiceId });
     }
 
 }

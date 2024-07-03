@@ -1,8 +1,7 @@
-import { mysqldb } from "../../core/config/knex.db.config";
-import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { config } from "../../startup/config";
 import { Request, Response } from "express";
+import { DriversModule } from "../../module/drivers.model";
 
 export class LoginController {
     req: Request;
@@ -28,8 +27,8 @@ export class LoginController {
 
     async verifyCredential(): Promise<any> {
         const { username, password } = this.req.body;
-        let select = await mysqldb("Drivers").select("*").where({ username });
-        if (select.length < 0) return;
+        let select = await DriversModule.getDriverByUsername(username);
+        if (select.length <= 0) return;
 
         const user = select[0];
         // let correctPassword = await bcrypt.compare(this.password!, user.password);
@@ -44,6 +43,7 @@ export class LoginController {
             username: user.username,
             driverName: user.driverName,
             isAdmin: user.isAdmin,
+            registrationDate: user.registrationDate,
         }
     }
 

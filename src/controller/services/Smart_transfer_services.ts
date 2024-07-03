@@ -1,78 +1,90 @@
 import { Request, Response } from "express";
 import { TransferResult } from "../../module/entity/smart_trasnfer.entity";
 import { SmartTransferModule } from "../../module/Smart_transfer.model";
+import { mysqldb } from "../../core/config/knex.db.config";
+import { getDriverId } from "../../core/functions/get_driver_id";
 
+type AutoTransferResult = {
+    total: number,
+    knownTables: number,
+    unknownTables: number,
+};
 
 export class SmartTransferServices {
 
     req: Request;
     res: Response;
-    knownBoats: string[] = [];
-    unKnownBoats: string[] = [];
+    knownBoats: number = 0;
+    unKnownBoats: number = 0;
     db: SmartTransferModule = new SmartTransferModule();
+    driverId: number;
 
     constructor(req: Request, res: Response) {
         this.req = req;
         this.res = res;
+        this.driverId = getDriverId(res);
     }
 
-    statusCode(): number {
-        return (this.knownBoats.length >= 1) ? 200 : 400;
-    }
+    result: AutoTransferResult = {
+        knownTables: 0,
+        unknownTables: 0,
+        total: 0
+    };
 
-    addToknownBoat(boatName: string): void {
-        this.knownBoats.push(boatName);
-    }
+    canTransfer = () => this.result.knownTables++;
+    canNotTransfer = () => this.result.unknownTables++;
 
-    addToUnKnownBoat(boatName: string): void {
-        this.unKnownBoats.push(boatName);
-    }
-
-    isBoatNameUnKnown(tables: any[]): boolean {
-        /// if the total tables that return in the List more than 1 that means there 
-        /// are many tables associated with the same boat name here we can not 
-        /// know exactly which is the right [Table] to transfer [Services] 
-        /// Or if no table returns we too can not transfer 
-        /// [Services] to an unknown Table
-        return tables.length > 1 || tables.length == 0
-    }
-
-    generateMessage(): string {
-        if (this.knownBoats.length >= 1) {
-            return "services are transferred successfully";
-        }
-        return "can not transfer services that its boat names are unknown";
-    }
-
-    getTransferResult(): TransferResult {
-        let message = this.generateMessage();
+    transferResult(): AutoTransferResult {
         return {
-            message,
-            known: this.knownBoats,
-            unKnown: this.unKnownBoats,
-        }
+            total: this.result.knownTables + this.result.unknownTables,
+            knownTables: this.result.knownTables,
+            unknownTables: this.result.unknownTables,
+        };
     }
 
-    async transfer(services: any[]): Promise<TransferResult> {
-
-        let fetch = [];
-
-        for (let service of services) {
-            const { boatName } = service;
-            const tables = await this.db.getTablesAssociatedWithBoatName(boatName);
-
-            if (this.isBoatNameUnKnown(tables)) {
-                this.addToUnKnownBoat(boatName);
-                continue;
-            }
-
-            this.addToknownBoat(boatName);
-            const task = async () => await this.db.transferServicesToTable(boatName, tables[0].tableId);
-            fetch.push(task());
-        }
-
-        await Promise.all(fetch);
-        return this.getTransferResult();
+    async getBoatNames(): Promise<any[]> {
+        return await mysqldb.distinct("boatName").from("services_view").where({
+            tableId: null
+        });
     }
+
+    async findTablesByBoatName(boatName: string): Promise<any> {
+        return await mysqldb.distinct("tableId").from("services_view").where({
+            "boatName": boatName.trim(),
+        }).whereNotNull("tableId");
+    }
+
+    async transferToTable(tableId: number, boatName: string): Promise<number> {
+        return await mysqldb.update({ tableId }).from("services").where({
+            "boatName": boatName,
+            "tableId": null,
+        })
+    }
+
+    async transferSignleBoatName(boatName: string): Promise<any> {
+        const tables = await this.findTablesByBoatName(boatName);
+        if (tables.length == 1) {
+            this.canTransfer();
+            await this.transferToTable(tables[0].tableId, boatName);
+            return;
+        }
+        return this.canNotTransfer();
+    }
+
+    async start(): Promise<AutoTransferResult> {
+        const boats = await this.getBoatNames();
+        if (boats.length <= 0) return this.transferResult();
+        let transfer = [];
+        for (let boat of boats) {
+            const { boatName } = boat;
+            const task = async () => this.transferSignleBoatName(boatName);
+            transfer.push(task());
+        }
+        await Promise.all(transfer);
+        return this.transferResult();
+    }
+
 
 }
+
+

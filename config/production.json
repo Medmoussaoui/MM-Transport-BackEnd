@@ -2,5 +2,12 @@
     "name": "our Express application -- Production",
     "mail": {
         "host": "Production-mail-server"
+    },
+    "periodic-time": "0 0 * * *",
+    "db": {
+        "database": "u292568806_mmtransport",
+        "user": "u292568806_moussaoui50",
+        "password": "O6mQW5Eu7Hf?",
+        "host": "154.56.47.1"
     }
 }

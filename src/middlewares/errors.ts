@@ -7,7 +7,8 @@ function expressAsyncCatcher(routeHandler: (req: Request, res: Response) => Prom
         try {
             await routeHandler(req, res);
         } catch (err) {
-            AppResponce.serverFailure(res, err);
+            const error = (err as Error);
+            AppResponce.serverFailure(res, err);                
         }
     }
 }

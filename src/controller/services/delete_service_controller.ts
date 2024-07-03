@@ -16,14 +16,14 @@ export class DeleteServiceController {
 
     checkBodyInput(): boolean {
         const { body } = this.req;
-        if (body.services == undefined) return false;
-        if (!Array.isArray(body.services)) return false;
-        if (body.services.length <= 0) return false;
+        if (body.serviceIds == undefined) return false;
+        if (!Array.isArray(body.serviceIds)) return false;
+        if (body.serviceIds.length <= 0) return false;
         return true;
     }
 
     async delete(): Promise<number> {
-        const { services } = this.req.body;
-        return await ServicessModule.delete(services);
+        const { serviceIds } = this.req.body;
+        return await ServicessModule.delete(serviceIds);
     }
 }

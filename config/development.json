@@ -1,5 +1,10 @@
 {
     "name": "our Express application -- Development",
-    "jwt-secretkey": "dsjhhdjshdskjdk8sds5d5d5f45d45vcvckjkzlklscx21100d0s0dsdshbjcpoaooeccxvwnnds545ds841adsdteynclvx8ds",
-    "bcrypt-solt": 10
+    "periodic-time": "*/10 * * * *",
+    "db": {
+        "database": "mm-transport",
+        "user": "root",
+        "password": "",
+        "host": "127.0.0.1"
+    }
 }

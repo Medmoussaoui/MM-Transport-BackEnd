@@ -21,8 +21,7 @@ export class GetServicesController {
     }
 
     async getServices(): Promise<any[]> {
-        const driverId = this.getDriverId();
         const page = getPageIndex(20, this.getPage());
-        return await ServicessModule.getServices(driverId, page);
+        return await ServicessModule.getServices(page);
     }
 }

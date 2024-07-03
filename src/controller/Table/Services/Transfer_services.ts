@@ -14,7 +14,6 @@ export class TransferTableServicesController {
     checkBodyInput(): boolean {
         const { serviceIds, from, to } = this.req.body;
         if (serviceIds == undefined) return false;
-        if (from == undefined && from == "") return false;
         if (to == undefined && to == "") return false;
         if (!Array.isArray(serviceIds)) return false;
         return true;
@@ -32,10 +31,6 @@ export class TransferTableServicesController {
 
     successTransferServices(): void {
         this.res.send("Services are Transferred Success");
-    }
-
-    faildTransferServices(): void {
-        this.res.status(400).send("Services are Aready Transferd");
     }
 
     async transfer(): Promise<number> {

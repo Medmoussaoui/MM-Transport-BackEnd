@@ -14,8 +14,8 @@ servicesRoute.post("/new", expressAsyncCatcher(controller.addService));
 
 servicesRoute.put("/edit", expressAsyncCatcher(controller.editService));
 
-servicesRoute.delete("/delete", expressAsyncCatcher(controller.deleteService));
+servicesRoute.post("/delete", expressAsyncCatcher(controller.deleteService));
 
 /// https://www.api.transport/services/transfer/dsds454dq4s54ds5q4dq5s4
 servicesRoute.post("/transfer/custom", expressAsyncCatcher(controller.customTransferServices));
-servicesRoute.post("/transfer/smart", expressAsyncCatcher(controller.smartTransferServices));
+servicesRoute.post("/transfer/auto", expressAsyncCatcher(controller.smartTransferServices));

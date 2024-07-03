@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
-import { InvoiceModule } from "../../module/invoice.model";
+import { mysqldb } from "../../core/config/knex.db.config";
+import { Knex } from "knex";
 
 export class DeleteInvoicesController {
     req: Request;
@@ -22,8 +23,29 @@ export class DeleteInvoicesController {
         return this.req.body.invoiceIds;
     }
 
-    async delete(): Promise<number> {
-        return await InvoiceModule.deleteInvoices(this.getInvoiceIds());
+    async delete(): Promise<void> {
+        const { invoiceIds } = this.req.body;
+        await mysqldb.transaction(async trx => {
+            await this.markPaidInvoicesUnVisible(trx, invoiceIds);
+            await this.removeUnPaidInvoices(trx, invoiceIds);
+        });
+    }
+
+
+    async markPaidInvoicesUnVisible(trx: Knex.Transaction, invoiceIds: any[]) {
+        return await mysqldb("invoices").update({ visible: 0 })
+            .whereIn("invoiceId", invoiceIds)
+            .andWhere({ pay_status: "paid" }).transacting(trx);
+    }
+
+    async removeUnPaidInvoices(trx: Knex.Transaction, invoiceIds: any[]) {
+        return await mysqldb("invoices").delete()
+            .whereIn("invoiceId", invoiceIds).andWhere({ pay_status: "unpaid" })
+            .transacting(trx);
     }
 
 }
+
+
+
+

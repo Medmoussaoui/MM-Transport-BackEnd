@@ -1,11 +1,9 @@
 import express from "express";
-import { Container } from "winston";
 import { TableController } from "../../controller/Table";
-import { CreateTableController } from "../../controller/Table/Create_table";
-import { GetTablesController } from "../../controller/Table/Get_tables";
 import { expressAsyncCatcher } from "../../middlewares/errors";
 import { tableServicesRoute } from "./Services";
 import { tableSettingsRoute } from "./Settings";
+import { isAuthorized } from "../../middlewares/auth";
 
 
 
@@ -17,12 +15,14 @@ const controller = new TableController();
 
 // Sub Routes
 tablesRoute.use("/services", tableServicesRoute);
-tablesRoute.use("/settings", tableSettingsRoute);
+tablesRoute.use("/settings", isAuthorized, tableSettingsRoute);
 
 
+tablesRoute.get("/", expressAsyncCatcher(controller.getTables));
 
-tablesRoute.post("/createTable", expressAsyncCatcher(controller.createTable));
-tablesRoute.get("/",expressAsyncCatcher(controller.getTables));
-tablesRoute.delete("/:tableId",expressAsyncCatcher(controller.deleteTable));
+tablesRoute.post("/createTable",
+    isAuthorized,
+    expressAsyncCatcher(controller.createTable),
+);
 
 

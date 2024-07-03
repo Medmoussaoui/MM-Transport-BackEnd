@@ -1,5 +1,7 @@
 import { Request, Response } from "express";
 import { LoginController } from "./login";
+import { changePasswordController } from "./Change_password";
+import { AppResponce } from "../../core/constant/appResponce";
 
 
 export class AccountController {
@@ -11,8 +13,10 @@ export class AccountController {
 
         const user = await controller.verifyCredential();
 
-        if (user == undefined) return controller.usernameOrPasswordInvalid();
-        
+        if (user == undefined) {
+            return controller.usernameOrPasswordInvalid();
+        }
+
         const userJwt = controller.userToJwtObject(user);
         const accessToken = controller.generateAccessToken(userJwt);
 
@@ -21,6 +25,14 @@ export class AccountController {
     }
 
     async changePassword(req: Request, res: Response) {
+        const controller = new changePasswordController(req, res);
 
+        if (!controller.validateInput()) return AppResponce.badRequest(res);
+        
+        const validCurrentPassword = await controller.verifyCurrentPassword();
+        if (!validCurrentPassword) return controller.currentPasswordWrong();
+
+        await controller.change();
+        res.send("Password changed");
     }
 }

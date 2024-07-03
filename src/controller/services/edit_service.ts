@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { ServicessModule } from "../../module/service.model";
+import { TrucksModule } from "../../module/trcuks.model";
 
 export class EditServiceController {
 
@@ -11,9 +12,6 @@ export class EditServiceController {
         this.res = res;
     }
 
-    canNotEditServicePayed(): void {
-        this.res.status(400).send("Can not edit Service payed");
-    }
 
     invalidServiceId(): void {
         this.res.status(400).send('Invalid Service Id');
@@ -26,7 +24,28 @@ export class EditServiceController {
         if (body.serviceType == undefined) return false;
         if (body.price == undefined) return false;
         if (body.dateCreate == undefined) return false;
+        if (body.truckNumber == undefined) return false;
         return true;
+    }
+
+    invalidTruckId() {
+        this.res.status(401).send("invalid truck");
+    }
+
+    async checkTruckNumber(): Promise<boolean> {
+        const { truckNumber, serviceType } = this.req.body;
+        const noTruckId = (truckNumber == undefined) || truckNumber == "" || truckNumber == 0;
+        const serviceIsPaye = (serviceType == "Paye");
+
+        if (serviceIsPaye && noTruckId) return true;
+        if (noTruckId) return false;
+
+        const truck = await TrucksModule.getTruckById(truckNumber);
+        if (truck.length > 0) {
+            this.req.body.truckId = truck[0].truckId;
+            return true;
+        }
+        return false;
     }
 
     async getService(): Promise<any[]> {
@@ -34,14 +53,11 @@ export class EditServiceController {
         return await ServicessModule.getServiceById(serviceId);
     }
 
-    isServicePayed(service: any): boolean {
-        const { pay_status } = service;
-        return pay_status == "pay";
-    }
 
     async update(): Promise<any[]> {
         const { body } = this.req;
-        return await ServicessModule.update(body);
+        await ServicessModule.update(body);
+        return await ServicessModule.getServiceById(body.serviceId);
     }
 
 }

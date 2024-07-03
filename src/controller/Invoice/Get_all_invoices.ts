@@ -1,8 +1,9 @@
 import { Request, Response } from "express";
-import { InvoiceConverter } from "../../core/class/invoice/invoice_converter";
 import { getPageIndex } from "../../core/functions/get_page_index";
-import { TableInvoice } from "../../module/entity/invoice.entity";
 import { InvoiceModule } from "../../module/invoice.model";
+import { TableInvoices } from "../../module/entity/invoice.entity";
+import { TableInvoicesConverter } from "../../core/class/invoice/table_invoices_converter";
+import { mysqldb } from "../../core/config/knex.db.config";
 
 export class GetAllInvoiecsController {
     req: Request;
@@ -13,31 +14,34 @@ export class GetAllInvoiecsController {
         this.res = res;
     }
 
-    convertToTableInvoice(rows: any[]): TableInvoice[] {
-        let currentInvoiceId;
-        let invoiceConverter: InvoiceConverter;
-        const invoices: TableInvoice[] = [];
-
-        for (let row of rows) {
-            if (currentInvoiceId != row.invoiceId) {
-                invoiceConverter = new InvoiceConverter([row]);
-                invoices.push(invoiceConverter.invoice);
-                currentInvoiceId = invoiceConverter.invoice.invoiceId;
-            }
-            invoiceConverter!.invoiceData = [row];
-            invoiceConverter!.convert();
-        }
-
-        return invoices;
-    }
-
     pageIndex(): number {
-        const page = this.req.header("page");
-        return getPageIndex(20, page)
+        const page = this.req.header("page")
+        if (page == undefined) return 0;
+        return parseInt(page);
     }
 
-    async getInvoices(): Promise<any[]> {
-        return await InvoiceModule.getInvoices(this.pageIndex());
+    async getInvoicesWithNoTable(): Promise<any[]> {
+        return mysqldb.select("*")
+            .from("invoices_view")
+            .where({ tableId: null, visible: 1, save: 1 });
+    }
+
+    async getTableIds(page: number) {
+        const offset = getPageIndex(5, `${page}`);
+        const query = await InvoiceModule.getTablesHasInvoices(offset);
+        if (query.length >= 1) {
+            return query.map(item => item["tableId"]);
+        }
+        return [];
+    }
+
+    convertToTableInvoices(rows: any[]): TableInvoices[] {
+        const converter = new TableInvoicesConverter(rows);
+        return converter.convert();
+    }
+
+    async getInvoices(tableIds: any[]): Promise<any[]> {
+        return await InvoiceModule.getInvoices(tableIds);
     }
 
 }

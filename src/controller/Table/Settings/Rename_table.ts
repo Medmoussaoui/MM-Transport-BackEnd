@@ -15,10 +15,6 @@ export class RenameTableController {
         this.res.send("Table Name Changed Successfully");
     }
 
-    faildChangeTableName(): void {
-        this.res.status(400).send("Faild Change Table Name");
-    }
-
     invalidBodyInput(): void {
         this.res.status(400).send('bad Request');
     }

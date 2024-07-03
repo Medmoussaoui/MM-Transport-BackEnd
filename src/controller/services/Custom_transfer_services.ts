@@ -13,9 +13,8 @@ export class CustomTransferServicesController extends TransferTableServicesContr
     }
 
     checkBodyInput(): boolean {
-        const { serviceIds, from, to } = this.req.body;
+        const { serviceIds, to } = this.req.body;
         if (serviceIds == undefined) return false;
-        if (from != null) return false;
         if (to == undefined && to == "") return false;
         if (!Array.isArray(serviceIds)) return false;
         return true;

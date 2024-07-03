@@ -1,5 +1,3 @@
 {
-    "mail": {
-        "password": "PASSWORD"
-    }
+    "node_env": "NODE_ENV"
 }

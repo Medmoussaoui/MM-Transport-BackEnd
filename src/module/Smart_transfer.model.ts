@@ -1,4 +1,13 @@
 import { mysqldb } from "../core/config/knex.db.config";
+import { ServicessModule } from "./service.model";
+
+
+type TransferToTableOptions = {
+    driveId: number,
+    tableId: number,
+    boatName: string,
+};
+
 
 export class SmartTransferModule {
 
@@ -9,16 +18,29 @@ export class SmartTransferModule {
     }
 
     async getTablesAssociatedWithBoatName(boatName: string): Promise<any[]> {
-        return await mysqldb("table_services_view")
+        return await mysqldb(ServicessModule.ServicesView)
             .distinct("tableId")
-            .where({ boatName });
+            .where({ boatName }).andWhereNot({ tableId: null });
     }
 
-    async transferServicesToTable(boatName: string, tableId: any): Promise<number> {
+    async transferServicesToTable(options: TransferToTableOptions): Promise<number> {
         /// update table id to [tableId] of all services that its boat name equals
         /// [BoatName], to make services associated with the specific table
-        return await mysqldb.update({ tableId })
+        return await mysqldb.update({ "tableId": options.tableId })
             .from("services")
-            .where({ boatName, tableId: null });
+            .where({
+                "boatName": options.boatName, "tableId": null,
+                "driverId": options.driveId
+            });
     }
 }
+
+function getTablesAssociatedWithBoatName() {
+    mysqldb.select("tableId", "")
+}
+
+// karil - mohamed - simo
+//  2        4         8
+
+
+// SELECT (tableId -> changed), (tableName -> static) 

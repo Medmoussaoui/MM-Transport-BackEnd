@@ -1,4 +1,5 @@
 {
-    "name": "our Express application ",
-    "database": "mm-transport"
+    "bcrypt-solt": 10,
+    "jwt-secretkey": "dsjhhdjshdskjdk8sds5d5d5f45d45vcvckjkzlklscx21100d0s0dsdshbjcpoaooeccxvwnnds545ds841adsdteynclvx8ds",
+    "name": "our Express application "
 }
